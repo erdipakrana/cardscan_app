@@ -28,23 +28,41 @@ A **Flutter** app that scans physical visiting (business) cards with your camera
 
 ## 🔍 Overview
 
-CardScan turns a photo of a business card into saved, browsable contact details. It captures an image with the camera, runs **Google ML Kit Text Recognition** on-device to extract the text, and persists each card in a local **SQLite** database (via Drift). The saved-cards list updates reactively as data changes.
+CardScan turns a photo of a business card into saved, browsable contact details. It captures an image with the camera, runs **Google ML Kit Text Recognition** on-device to extract the text, and persists each card in a local **SQLite** database (via Drift). 
 
-**Who it's for:** anyone who collects business cards — sales reps, founders, recruiters, event-goers — and wants a private, offline way to digitize them.
+To match premium business card scanners without the recurring cloud costs or external APIs, CardScan is designed to implement network intelligence, visualizations, and contact integration using **100% free and on-device features**.
+
+**Who it's for:** anyone who collects business cards — sales reps, founders, recruiters, event-goers — and wants a private, free, offline, and smart way to digitize and analyze their network.
+
+---
+
+## 💡 AWS/Web App Parity (100% Free & Local)
+
+Here is how we map expensive cloud/proprietary features to local, offline, and 100% free packages:
+
+| Premium Web Feature | Free Flutter App Implementation | Package / Service | Cost |
+| --- | --- | --- | --- |
+| **Amazon Textract** | **On-Device OCR** (Text Recognition) | `google_mlkit_text_recognition` | **$0 (100% Free / On-Device)** |
+| **DeepSeek AI (Paid API)** | **Heuristics & Regex Parsing Engine** | Custom Dart Parsing Logic | **$0 (100% Free / On-Device)** |
+| **AWS Cognito / DynamoDB** | **Local SQLite (Drift)** + Offline First | `drift` + `sqlite3_flutter_libs` | **$0 (100% Free / On-Device)** |
+| **Network Analysis Dashboard** | **Native Charts & Connection Graphs** | `fl_chart` + Custom Canvas | **$0 (100% Free / On-Device)** |
+| **Local Contact Integration** | **Direct Device Contacts Export** | `flutter_contacts` / `contacts_service` | **$0 (100% Free / On-Device)** |
 
 ---
 
 ## ✨ Key Features
 
-- 📷 **Camera capture** — scan a business card with the device camera
-- 🔍 **On-device OCR** — extract text automatically via Google ML Kit (works offline)
-- 🧠 **Intelligent Parsing** — auto-detect name, job title, company, email, phone, and website from the extracted raw OCR text using regex and heuristics
-- ✍️ **Interactive Review & Edit** — verify and correct parsed contact fields in an edit form before saving
-- 💾 **Local persistence** — save structured contacts to an on-device SQLite database (Drift)
-- 📋 **Structured Cards list** — browse and expand stored cards to view clean, grouped contact details
-- 📋 **One-tap Copy** — quickly copy individual contact fields (email, phone, website) to your clipboard
-- 🗑️ **Delete cards** — remove entries you no longer need
-- ⚡ **Reactive UI** — the list updates live via a database stream
+- 📷 **Camera capture** — scan a business card with the device camera.
+- 🔍 **On-device OCR** — extract text automatically via Google ML Kit (works offline).
+- 🧠 **Intelligent Parsing** — auto-detect name, job title, company, email, phone, website, and industry using optimized local regex patterns and custom heuristics.
+- 📊 **Network Analysis Dashboard** — visualize industry distribution, company hubs, and connections dynamically on-device.
+- ✍️ **Interactive Review & Edit** — verify and correct parsed contact fields in an edit form before saving.
+- 💾 **Local persistence** — save structured contacts to an on-device SQLite database (Drift).
+- 📋 **Structured Cards list** — browse, filter, search, and expand stored cards.
+- 👤 **Native Contacts Sync** — export scanned cards directly to your phone's address book with one tap.
+- 📋 **One-tap Copy** — quickly copy individual contact fields to your clipboard.
+- 🗑️ **Delete cards** — remove entries you no longer need.
+- ⚡ **Reactive UI** — the list and dashboard update live via database streams.
 
 ---
 
@@ -52,9 +70,9 @@ CardScan turns a photo of a business card into saved, browsable contact details.
 
 > _Add screenshots or a screen recording here to help contributors and users._
 >
-> | Saved Cards | Scan Screen | Extracted Text |
-> | :---------: | :---------: | :------------: |
-> |  _(add)_    |  _(add)_    |    _(add)_     |
+> | Saved Cards | Scan Screen | Network Dashboard |
+> | :---------: | :---------: | :---------------: |
+> |  _(add)_    |  _(add)_    |      _(add)_      |
 
 ---
 
@@ -66,6 +84,8 @@ CardScan turns a photo of a business card into saved, browsable contact details.
 | State management | [`flutter_riverpod`](https://pub.dev/packages/flutter_riverpod) |
 | Text recognition (OCR) | [`google_mlkit_text_recognition`](https://pub.dev/packages/google_mlkit_text_recognition) |
 | Local database | [`drift`](https://pub.dev/packages/drift) + `sqlite3_flutter_libs` |
+| Dashboard Charts | [`fl_chart`](https://pub.dev/packages/fl_chart) |
+| Contact Syncing | [`flutter_contacts`](https://pub.dev/packages/flutter_contacts) |
 | Camera / image capture | [`image_picker`](https://pub.dev/packages/image_picker) |
 | File paths | `path_provider`, `path` |
 | Codegen | `drift_dev`, `build_runner` |
@@ -73,7 +93,7 @@ CardScan turns a photo of a business card into saved, browsable contact details.
 
 **Supported platforms:** Android, iOS, Web¹
 
-> ¹ OCR and camera capture depend on device support; ML Kit is intended for mobile.
+> ¹ OCR, camera capture, and native contact integration depend on device support; ML Kit and native contacts are optimized for mobile.
 
 ---
 
@@ -257,13 +277,14 @@ Deploy the contents of `build/web/` to any static host (Firebase Hosting, Netlif
 High-impact, modern feature ideas for contributors. Pick one, open an issue to claim it, and send a PR!
 
 ### 🔥 High Impact
-- [x] **Structured field parsing** — auto-detect name, phone, email, company, and website from raw OCR text instead of storing one blob (regex/NLP based).
-- [ ] **Save to device contacts** — one-tap export of a scanned card to the phone's address book.
-- [ ] **Search & filter** — full-text search across saved cards by name, company, or keyword.
-- [ ] **Edit saved cards** — let users correct OCR mistakes after saving (now partially implemented as edit-before-saving).
-- [ ] **Camera permission setup** — declare Android/iOS permissions so scanning works reliably on all devices.
+- [x] **Structured field parsing** — auto-detect name, phone, email, company, and website from raw OCR text (regex/heuristics).
+- [ ] **Advanced Search & Filtering** — full-text search across saved cards by name, company, industry, or keyword (via Drift/SQLite FTS).
+- [ ] **Heuristics Parser Tuning** — expand keyword dictionary and pattern matching to auto-categorize job titles and company industries locally.
+- [ ] **Save to device contacts** — one-tap export of scanned business cards to the native phone address book (via `flutter_contacts`).
+- [ ] **Edit saved cards** — let users correct OCR mistakes after saving (partially implemented as edit-before-saving).
 
-### 📱 Modern UX
+### 📱 Modern UX & Analytics
+- [ ] **Network Analysis Dashboard** — create a dedicated statistics/analytics tab with `fl_chart` to view industry distribution and professional network insights.
 - [ ] **Live camera scanning** — real-time card detection with an overlay guide instead of the picker flow.
 - [ ] **Material 3 + dark mode** — migrate the theme to Material 3 with dynamic color and a dark theme.
 - [ ] **Card thumbnails** — persist the captured image alongside details and show it in the list.
@@ -272,7 +293,7 @@ High-impact, modern feature ideas for contributors. Pick one, open an issue to c
 
 ### 🌐 Integrations & Sync
 - [ ] **QR / vCard export** — generate a shareable QR code or `.vcf` file per card.
-- [ ] **Cloud backup & sync** — optional sync via Firebase / Supabase across devices.
+- [ ] **Cloud backup & sync** — optional sync via Supabase (Free Plan) or Firebase (Spark Free Plan) across devices.
 - [ ] **Multi-language OCR** — support Latin, Chinese, Japanese, Korean, and Devanagari scripts.
 - [ ] **CSV / Excel export** — bulk-export all cards for use in a CRM.
 

@@ -92,6 +92,29 @@ class $CardsTable extends Cards with TableInfo<$CardsTable, CardData> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _imagePathMeta = const VerificationMeta(
+    'imagePath',
+  );
+  @override
+  late final GeneratedColumn<String> imagePath = GeneratedColumn<String>(
+    'image_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -102,6 +125,8 @@ class $CardsTable extends Cards with TableInfo<$CardsTable, CardData> {
     phone,
     website,
     details,
+    imagePath,
+    createdAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -164,6 +189,18 @@ class $CardsTable extends Cards with TableInfo<$CardsTable, CardData> {
     } else if (isInserting) {
       context.missing(_detailsMeta);
     }
+    if (data.containsKey('image_path')) {
+      context.handle(
+        _imagePathMeta,
+        imagePath.isAcceptableOrUnknown(data['image_path']!, _imagePathMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
     return context;
   }
 
@@ -205,6 +242,14 @@ class $CardsTable extends Cards with TableInfo<$CardsTable, CardData> {
         DriftSqlType.string,
         data['${effectivePrefix}details'],
       )!,
+      imagePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}image_path'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
     );
   }
 
@@ -223,6 +268,8 @@ class CardData extends DataClass implements Insertable<CardData> {
   final String? phone;
   final String? website;
   final String details;
+  final String? imagePath;
+  final DateTime createdAt;
   const CardData({
     required this.id,
     required this.name,
@@ -232,6 +279,8 @@ class CardData extends DataClass implements Insertable<CardData> {
     this.phone,
     this.website,
     required this.details,
+    this.imagePath,
+    required this.createdAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -254,6 +303,10 @@ class CardData extends DataClass implements Insertable<CardData> {
       map['website'] = Variable<String>(website);
     }
     map['details'] = Variable<String>(details);
+    if (!nullToAbsent || imagePath != null) {
+      map['image_path'] = Variable<String>(imagePath);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
 
@@ -277,6 +330,10 @@ class CardData extends DataClass implements Insertable<CardData> {
           ? const Value.absent()
           : Value(website),
       details: Value(details),
+      imagePath: imagePath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(imagePath),
+      createdAt: Value(createdAt),
     );
   }
 
@@ -294,6 +351,8 @@ class CardData extends DataClass implements Insertable<CardData> {
       phone: serializer.fromJson<String?>(json['phone']),
       website: serializer.fromJson<String?>(json['website']),
       details: serializer.fromJson<String>(json['details']),
+      imagePath: serializer.fromJson<String?>(json['imagePath']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
   @override
@@ -308,6 +367,8 @@ class CardData extends DataClass implements Insertable<CardData> {
       'phone': serializer.toJson<String?>(phone),
       'website': serializer.toJson<String?>(website),
       'details': serializer.toJson<String>(details),
+      'imagePath': serializer.toJson<String?>(imagePath),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
 
@@ -320,6 +381,8 @@ class CardData extends DataClass implements Insertable<CardData> {
     Value<String?> phone = const Value.absent(),
     Value<String?> website = const Value.absent(),
     String? details,
+    Value<String?> imagePath = const Value.absent(),
+    DateTime? createdAt,
   }) => CardData(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -329,6 +392,8 @@ class CardData extends DataClass implements Insertable<CardData> {
     phone: phone.present ? phone.value : this.phone,
     website: website.present ? website.value : this.website,
     details: details ?? this.details,
+    imagePath: imagePath.present ? imagePath.value : this.imagePath,
+    createdAt: createdAt ?? this.createdAt,
   );
   CardData copyWithCompanion(CardsCompanion data) {
     return CardData(
@@ -340,6 +405,8 @@ class CardData extends DataClass implements Insertable<CardData> {
       phone: data.phone.present ? data.phone.value : this.phone,
       website: data.website.present ? data.website.value : this.website,
       details: data.details.present ? data.details.value : this.details,
+      imagePath: data.imagePath.present ? data.imagePath.value : this.imagePath,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
 
@@ -353,14 +420,26 @@ class CardData extends DataClass implements Insertable<CardData> {
           ..write('email: $email, ')
           ..write('phone: $phone, ')
           ..write('website: $website, ')
-          ..write('details: $details')
+          ..write('details: $details, ')
+          ..write('imagePath: $imagePath, ')
+          ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, name, jobTitle, company, email, phone, website, details);
+  int get hashCode => Object.hash(
+    id,
+    name,
+    jobTitle,
+    company,
+    email,
+    phone,
+    website,
+    details,
+    imagePath,
+    createdAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -372,7 +451,9 @@ class CardData extends DataClass implements Insertable<CardData> {
           other.email == this.email &&
           other.phone == this.phone &&
           other.website == this.website &&
-          other.details == this.details);
+          other.details == this.details &&
+          other.imagePath == this.imagePath &&
+          other.createdAt == this.createdAt);
 }
 
 class CardsCompanion extends UpdateCompanion<CardData> {
@@ -384,6 +465,8 @@ class CardsCompanion extends UpdateCompanion<CardData> {
   final Value<String?> phone;
   final Value<String?> website;
   final Value<String> details;
+  final Value<String?> imagePath;
+  final Value<DateTime> createdAt;
   const CardsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -393,6 +476,8 @@ class CardsCompanion extends UpdateCompanion<CardData> {
     this.phone = const Value.absent(),
     this.website = const Value.absent(),
     this.details = const Value.absent(),
+    this.imagePath = const Value.absent(),
+    this.createdAt = const Value.absent(),
   });
   CardsCompanion.insert({
     this.id = const Value.absent(),
@@ -403,6 +488,8 @@ class CardsCompanion extends UpdateCompanion<CardData> {
     this.phone = const Value.absent(),
     this.website = const Value.absent(),
     required String details,
+    this.imagePath = const Value.absent(),
+    this.createdAt = const Value.absent(),
   }) : name = Value(name),
        details = Value(details);
   static Insertable<CardData> custom({
@@ -414,6 +501,8 @@ class CardsCompanion extends UpdateCompanion<CardData> {
     Expression<String>? phone,
     Expression<String>? website,
     Expression<String>? details,
+    Expression<String>? imagePath,
+    Expression<DateTime>? createdAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -424,6 +513,8 @@ class CardsCompanion extends UpdateCompanion<CardData> {
       if (phone != null) 'phone': phone,
       if (website != null) 'website': website,
       if (details != null) 'details': details,
+      if (imagePath != null) 'image_path': imagePath,
+      if (createdAt != null) 'created_at': createdAt,
     });
   }
 
@@ -436,6 +527,8 @@ class CardsCompanion extends UpdateCompanion<CardData> {
     Value<String?>? phone,
     Value<String?>? website,
     Value<String>? details,
+    Value<String?>? imagePath,
+    Value<DateTime>? createdAt,
   }) {
     return CardsCompanion(
       id: id ?? this.id,
@@ -446,6 +539,8 @@ class CardsCompanion extends UpdateCompanion<CardData> {
       phone: phone ?? this.phone,
       website: website ?? this.website,
       details: details ?? this.details,
+      imagePath: imagePath ?? this.imagePath,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 
@@ -476,6 +571,12 @@ class CardsCompanion extends UpdateCompanion<CardData> {
     if (details.present) {
       map['details'] = Variable<String>(details.value);
     }
+    if (imagePath.present) {
+      map['image_path'] = Variable<String>(imagePath.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
     return map;
   }
 
@@ -489,7 +590,9 @@ class CardsCompanion extends UpdateCompanion<CardData> {
           ..write('email: $email, ')
           ..write('phone: $phone, ')
           ..write('website: $website, ')
-          ..write('details: $details')
+          ..write('details: $details, ')
+          ..write('imagePath: $imagePath, ')
+          ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
   }
@@ -516,6 +619,8 @@ typedef $$CardsTableCreateCompanionBuilder =
       Value<String?> phone,
       Value<String?> website,
       required String details,
+      Value<String?> imagePath,
+      Value<DateTime> createdAt,
     });
 typedef $$CardsTableUpdateCompanionBuilder =
     CardsCompanion Function({
@@ -527,6 +632,8 @@ typedef $$CardsTableUpdateCompanionBuilder =
       Value<String?> phone,
       Value<String?> website,
       Value<String> details,
+      Value<String?> imagePath,
+      Value<DateTime> createdAt,
     });
 
 class $$CardsTableFilterComposer extends Composer<_$AppDatabase, $CardsTable> {
@@ -574,6 +681,16 @@ class $$CardsTableFilterComposer extends Composer<_$AppDatabase, $CardsTable> {
 
   ColumnFilters<String> get details => $composableBuilder(
     column: $table.details,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get imagePath => $composableBuilder(
+    column: $table.imagePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -626,6 +743,16 @@ class $$CardsTableOrderingComposer
     column: $table.details,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get imagePath => $composableBuilder(
+    column: $table.imagePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$CardsTableAnnotationComposer
@@ -660,6 +787,12 @@ class $$CardsTableAnnotationComposer
 
   GeneratedColumn<String> get details =>
       $composableBuilder(column: $table.details, builder: (column) => column);
+
+  GeneratedColumn<String> get imagePath =>
+      $composableBuilder(column: $table.imagePath, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
 }
 
 class $$CardsTableTableManager
@@ -698,6 +831,8 @@ class $$CardsTableTableManager
                 Value<String?> phone = const Value.absent(),
                 Value<String?> website = const Value.absent(),
                 Value<String> details = const Value.absent(),
+                Value<String?> imagePath = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
               }) => CardsCompanion(
                 id: id,
                 name: name,
@@ -707,6 +842,8 @@ class $$CardsTableTableManager
                 phone: phone,
                 website: website,
                 details: details,
+                imagePath: imagePath,
+                createdAt: createdAt,
               ),
           createCompanionCallback:
               ({
@@ -718,6 +855,8 @@ class $$CardsTableTableManager
                 Value<String?> phone = const Value.absent(),
                 Value<String?> website = const Value.absent(),
                 required String details,
+                Value<String?> imagePath = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
               }) => CardsCompanion.insert(
                 id: id,
                 name: name,
@@ -727,6 +866,8 @@ class $$CardsTableTableManager
                 phone: phone,
                 website: website,
                 details: details,
+                imagePath: imagePath,
+                createdAt: createdAt,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

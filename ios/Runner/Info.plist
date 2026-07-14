@@ -66,5 +66,11 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>This app requires camera access to scan business cards.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app requires photo library access to import business card photos.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>This app requires contacts access to export business card information to your local phone address book.</string>
 </dict>
 </plist>

@@ -12,6 +12,8 @@ class CardModel {
       phone: data.phone,
       website: data.website,
       details: data.details,
+      imagePath: data.imagePath,
+      createdAt: data.createdAt,
     );
   }
 
@@ -25,6 +27,8 @@ class CardModel {
       phone: entity.phone,
       website: entity.website,
       details: entity.details,
+      imagePath: entity.imagePath,
+      createdAt: entity.createdAt ?? DateTime.now(),
     );
   }
 }

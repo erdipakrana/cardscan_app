@@ -23,6 +23,7 @@ class CardsRepositoryImpl implements CardsRepository {
     String? phone,
     String? website,
     required String details,
+    String? imagePath,
   }) async {
     await _datasource.insertCard(
       name: name,
@@ -32,6 +33,7 @@ class CardsRepositoryImpl implements CardsRepository {
       phone: phone,
       website: website,
       details: details,
+      imagePath: imagePath,
     );
   }
 

@@ -271,6 +271,7 @@ class CardScannerController extends StateNotifier<CardScannerState> {
         phone: phone,
         website: website,
         details: state.extractedText,
+        imagePath: state.image?.path,
       );
       state = const CardScannerState(); // Reset scanner state after save
       return true;

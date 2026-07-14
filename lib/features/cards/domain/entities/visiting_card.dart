@@ -7,6 +7,8 @@ class VisitingCard {
   final String? phone;
   final String? website;
   final String details;
+  final String? imagePath;
+  final DateTime? createdAt;
 
   const VisitingCard({
     required this.id,
@@ -17,6 +19,8 @@ class VisitingCard {
     this.phone,
     this.website,
     required this.details,
+    this.imagePath,
+    this.createdAt,
   });
 
   VisitingCard copyWith({
@@ -28,6 +32,8 @@ class VisitingCard {
     String? phone,
     String? website,
     String? details,
+    String? imagePath,
+    DateTime? createdAt,
   }) {
     return VisitingCard(
       id: id ?? this.id,
@@ -38,6 +44,8 @@ class VisitingCard {
       phone: phone ?? this.phone,
       website: website ?? this.website,
       details: details ?? this.details,
+      imagePath: imagePath ?? this.imagePath,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 }

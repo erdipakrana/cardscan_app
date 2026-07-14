@@ -10,6 +10,7 @@ abstract class CardsRepository {
     String? phone,
     String? website,
     required String details,
+    String? imagePath,
   });
   Future<void> deleteCard(int id);
 }

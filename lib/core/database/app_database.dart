@@ -15,6 +15,8 @@ class Cards extends Table {
   TextColumn get phone => text().nullable()();
   TextColumn get website => text().nullable()();
   TextColumn get details => text()();
+  TextColumn get imagePath => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
 @DriftDatabase(tables: [Cards])
@@ -22,5 +24,20 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration {
+    return MigrationStrategy(
+      onCreate: (Migrator m) async {
+        await m.createAll();
+      },
+      onUpgrade: (Migrator m, int from, int to) async {
+        if (from < 2) {
+          await m.addColumn(cards, cards.imagePath);
+          await m.addColumn(cards, cards.createdAt);
+        }
+      },
+    );
+  }
 }

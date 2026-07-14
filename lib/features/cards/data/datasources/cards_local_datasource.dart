@@ -11,6 +11,7 @@ abstract class CardsLocalDatasource {
     String? phone,
     String? website,
     required String details,
+    String? imagePath,
   });
   Future<void> deleteCard(int id);
 }
@@ -34,6 +35,7 @@ class CardsLocalDatasourceImpl implements CardsLocalDatasource {
     String? phone,
     String? website,
     required String details,
+    String? imagePath,
   }) async {
     await _db.into(_db.cards).insert(
           CardsCompanion.insert(
@@ -44,6 +46,7 @@ class CardsLocalDatasourceImpl implements CardsLocalDatasource {
             phone: Value(phone),
             website: Value(website),
             details: details,
+            imagePath: Value(imagePath),
           ),
         );
   }

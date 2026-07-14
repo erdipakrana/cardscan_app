@@ -49,53 +49,53 @@ class _CardScannerPageState extends ConsumerState<CardScannerPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(
+                 TextField(
                   controller: nameController,
                   decoration: const InputDecoration(
                     labelText: 'Contact Name *',
-                    border: OutlineInputBorder(),
+                    floatingLabelBehavior: FloatingLabelBehavior.always,
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 TextField(
                   controller: jobTitleController,
                   decoration: const InputDecoration(
                     labelText: 'Job Title',
-                    border: OutlineInputBorder(),
+                    floatingLabelBehavior: FloatingLabelBehavior.always,
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 TextField(
                   controller: companyController,
                   decoration: const InputDecoration(
                     labelText: 'Company',
-                    border: OutlineInputBorder(),
+                    floatingLabelBehavior: FloatingLabelBehavior.always,
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 TextField(
                   controller: emailController,
                   decoration: const InputDecoration(
                     labelText: 'Email Address',
-                    border: OutlineInputBorder(),
+                    floatingLabelBehavior: FloatingLabelBehavior.always,
                   ),
                   keyboardType: TextInputType.emailAddress,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 TextField(
                   controller: phoneController,
                   decoration: const InputDecoration(
                     labelText: 'Phone Number',
-                    border: OutlineInputBorder(),
+                    floatingLabelBehavior: FloatingLabelBehavior.always,
                   ),
                   keyboardType: TextInputType.phone,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 TextField(
                   controller: websiteController,
                   decoration: const InputDecoration(
                     labelText: 'Website',
-                    border: OutlineInputBorder(),
+                    floatingLabelBehavior: FloatingLabelBehavior.always,
                   ),
                   keyboardType: TextInputType.url,
                 ),
@@ -235,9 +235,14 @@ class _CardScannerPageState extends ConsumerState<CardScannerPage> {
               Container(
                 height: 250,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
+                  color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.shade300),
+                  border: Border.all(
+                    color: scannerState.image != null
+                        ? const Color(0xFF36B37E) // Scanner Green on capture
+                        : const Color(0xFF00B8D9), // Intelligence Teal when active/ready
+                    width: 2.0,
+                  ),
                   image: scannerState.image != null
                       ? DecorationImage(
                           image: kIsWeb
@@ -254,14 +259,15 @@ class _CardScannerPageState extends ConsumerState<CardScannerPage> {
                           Icon(
                             Icons.add_a_photo_outlined,
                             size: 64,
-                            color: Colors.grey.shade400,
+                            color: const Color(0xFF00B8D9).withOpacity(0.7),
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            'No image captured yet',
+                            'Align card within the frame',
                             style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontWeight: FontWeight.w500,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
                             ),
                           ),
                         ],
@@ -284,6 +290,8 @@ class _CardScannerPageState extends ConsumerState<CardScannerPage> {
                     Expanded(
                       child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+                          foregroundColor: Theme.of(context).colorScheme.onSecondaryContainer,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),

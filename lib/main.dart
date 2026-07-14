@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cardscan_app/core/theme/app_theme.dart';
 import 'package:cardscan_app/features/cards/presentation/pages/saved_cards_page.dart';
 
 void main() {
@@ -18,9 +19,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Visiting Card Scanner', // Title of the app
-      theme: ThemeData(
-        primarySwatch: Colors.blue, // Defining the primary theme color
-      ),
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.system,
       home: const SavedCardsPage(), // Setting SavedCardsPage as the home screen of the app
     );
   }
