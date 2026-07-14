@@ -1,109 +1,376 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cardscan_app/core/utils/export_helper.dart';
+import 'package:cardscan_app/core/widgets/app_bottom_nav_bar.dart';
+import 'package:cardscan_app/core/widgets/app_empty_state.dart';
+import 'package:cardscan_app/core/widgets/app_search_field.dart';
+import 'package:cardscan_app/core/widgets/app_selection_action_bar.dart';
+import 'package:cardscan_app/features/cards/domain/entities/visiting_card.dart';
 import 'package:cardscan_app/features/cards/presentation/controllers/cards_providers.dart';
 import 'package:cardscan_app/features/cards/presentation/pages/card_scanner_page.dart';
-import 'package:cardscan_app/features/cards/domain/entities/visiting_card.dart';
+import 'package:cardscan_app/features/cards/presentation/widgets/card_filter_chips.dart';
+import 'package:cardscan_app/features/cards/presentation/widgets/cards_header.dart';
+import 'package:cardscan_app/features/cards/presentation/widgets/insights_tab.dart';
+import 'package:cardscan_app/features/cards/presentation/widgets/quick_insight_card.dart';
+import 'package:cardscan_app/features/cards/presentation/widgets/visiting_card_list_item.dart';
 
-class SavedCardsPage extends ConsumerWidget {
+class SavedCardsPage extends ConsumerStatefulWidget {
   const SavedCardsPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final cardsAsync = ref.watch(cardsStreamProvider);
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Visiting Card Scanner'),
-        centerTitle: true,
-        elevation: 0,
-      ),
-      floatingActionButton: FloatingActionButton(
-        tooltip: 'Scan a new card',
-        child: const Icon(Icons.camera_alt),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const CardScannerPage(),
-            ),
-          );
-        },
-      ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-        child: cardsAsync.when(
-          data: (cards) {
-            if (cards.isEmpty) {
-              return const _EmptyStateWidget();
-            }
-            return ListView.separated(
-              itemCount: cards.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final card = cards[index];
-                return _CardItem(card: card);
-              },
-            );
-          },
-          loading: () => const Center(
-            child: CircularProgressIndicator(),
-          ),
-          error: (error, stack) => Center(
-            child: Text(
-              'Error loading cards: $error',
-              style: const TextStyle(color: Colors.red),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  ConsumerState<SavedCardsPage> createState() => _SavedCardsPageState();
 }
 
-class _EmptyStateWidget extends StatelessWidget {
-  const _EmptyStateWidget();
+class _SavedCardsPageState extends ConsumerState<SavedCardsPage> {
+  static const _filters = ['All', 'Company', 'Recently Added', 'Job Title'];
+  static const _navItems = [
+    AppBottomNavItem(icon: Icons.style, label: 'Cards'),
+    AppBottomNavItem(icon: Icons.insights, label: 'Insights'),
+    AppBottomNavItem(icon: Icons.settings, label: 'Settings'),
+  ];
+
+  int _currentTabIndex = 0;
+  String _searchQuery = '';
+  String _activeFilter = 'All';
+  bool _isSelecting = false;
+  final Set<int> _selectedCardIds = {};
+  final Set<int> _expandedCardIds = {};
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+    final cardsAsync = ref.watch(cardsStreamProvider);
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      appBar: _buildAppBar(context),
+      body: _buildBody(context, cardsAsync),
+      floatingActionButton: _currentTabIndex == 0
+          ? _buildScanButton(context)
+          : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.contact_mail_outlined,
-            size: 64,
-            color: Colors.grey.shade400,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No cards saved yet',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey.shade600,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Tap the camera icon to scan a visiting card.',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade500,
-            ),
+          if (_isSelecting && _currentTabIndex == 0)
+            _buildSelectionBar(cardsAsync),
+          AppBottomNavBar(
+            items: _navItems,
+            currentIndex: _currentTabIndex,
+            onChanged: _setCurrentTab,
           ),
         ],
       ),
     );
   }
-}
 
-class _CardItem extends ConsumerWidget {
-  final VisitingCard card;
+  PreferredSizeWidget _buildAppBar(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
 
-  const _CardItem({required this.card});
+    return AppBar(
+      backgroundColor: colorScheme.surface,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      leading: Padding(
+        padding: const EdgeInsets.only(left: 16, top: 12, bottom: 12),
+        child: CircleAvatar(
+          backgroundColor: colorScheme.primaryContainer,
+          child: Text(
+            'JD',
+            style: TextStyle(
+              color: colorScheme.onPrimary,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
+          ),
+        ),
+      ),
+      titleSpacing: 12,
+      title: Text(
+        'CardScan',
+        style: TextStyle(
+          color: colorScheme.primary,
+          fontWeight: FontWeight.bold,
+          fontSize: 22,
+          letterSpacing: -0.5,
+        ),
+      ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.search),
+          color: colorScheme.primary,
+          onPressed: () => _setCurrentTab(0),
+        ),
+        IconButton(
+          icon: const Icon(Icons.more_vert),
+          color: colorScheme.primary,
+          onPressed: () {
+            showAboutDialog(
+              context: context,
+              applicationName: 'CardScan',
+              applicationVersion: '1.0.0',
+              applicationLegalese: '© 2026 CardScan Inc.',
+            );
+          },
+        ),
+        const SizedBox(width: 8),
+      ],
+    );
+  }
 
-  void _copyToClipboard(BuildContext context, String text, String label) {
+  Widget _buildBody(
+    BuildContext context,
+    AsyncValue<List<VisitingCard>> cardsAsync,
+  ) {
+    switch (_currentTabIndex) {
+      case 1:
+        return cardsAsync.when(
+          data: (cards) => InsightsTab(cards: cards),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, stack) => Center(child: Text('Error: $error')),
+        );
+      case 2:
+        return _SettingsTab(
+          cardsAsync: cardsAsync,
+          onExportCards: ExportHelper.shareAsCsv,
+        );
+      case 0:
+      default:
+        return _buildCardsTab(cardsAsync);
+    }
+  }
+
+  Widget _buildCardsTab(AsyncValue<List<VisitingCard>> cardsAsync) {
+    return cardsAsync.when(
+      data: (cards) {
+        final filteredCards = _filterCards(cards);
+
+        return RefreshIndicator(
+          onRefresh: () async => ref.refresh(cardsStreamProvider),
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 8,
+                ),
+                sliver: SliverToBoxAdapter(
+                  child: _CardsToolbar(
+                    totalCards: cards.length,
+                    isSelecting: _isSelecting,
+                    searchController: _searchController,
+                    filters: _filters,
+                    activeFilter: _activeFilter,
+                    onToggleSelection: _toggleSelectionMode,
+                    onSearchChanged: (value) {
+                      setState(() => _searchQuery = value);
+                    },
+                    onFilterSelected: (filter) {
+                      setState(() => _activeFilter = filter);
+                    },
+                  ),
+                ),
+              ),
+              if (filteredCards.isEmpty)
+                const SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: AppEmptyState(
+                    icon: Icons.contact_mail_outlined,
+                    title: 'No cards yet',
+                    message:
+                        'Scan your first business card to start organizing your network.',
+                  ),
+                )
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      if (index == filteredCards.length) {
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 16, bottom: 80),
+                          child: QuickInsightCard(
+                            cards: cards,
+                            onViewInsights: () => _setCurrentTab(1),
+                          ),
+                        );
+                      }
+
+                      final card = filteredCards[index];
+                      return VisitingCardListItem(
+                        card: card,
+                        isExpanded: _expandedCardIds.contains(card.id),
+                        isSelecting: _isSelecting,
+                        isSelected: _selectedCardIds.contains(card.id),
+                        onTap: () => _handleCardTap(card.id),
+                        onCopy: _copyToClipboard,
+                        onSaveContact: ExportHelper.saveToDeviceContacts,
+                        onDelete: _deleteCard,
+                      );
+                    }, childCount: filteredCards.length + 1),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => Center(
+        child: Text(
+          'Error loading cards: $error',
+          style: const TextStyle(color: Colors.red),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSelectionBar(AsyncValue<List<VisitingCard>> cardsAsync) {
+    return cardsAsync.maybeWhen(
+      data: (cards) => AppSelectionActionBar(
+        selectedCount: _selectedCardIds.length,
+        onCancel: _clearSelection,
+        onShare: () => _shareSelectedCards(cards),
+        onDelete: () => _deleteSelectedCards(cards),
+      ),
+      orElse: () => const SizedBox.shrink(),
+    );
+  }
+
+  Widget _buildScanButton(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return FloatingActionButton.extended(
+      elevation: 4,
+      backgroundColor: colorScheme.primaryContainer,
+      foregroundColor: colorScheme.onPrimary,
+      icon: const Icon(Icons.photo_camera),
+      label: const Text(
+        'Scan Card',
+        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+      ),
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const CardScannerPage()),
+        );
+      },
+    );
+  }
+
+  List<VisitingCard> _filterCards(List<VisitingCard> cards) {
+    final query = _searchQuery.toLowerCase().trim();
+    final filteredCards = cards.where((card) {
+      final matchesQuery =
+          query.isEmpty ||
+          card.name.toLowerCase().contains(query) ||
+          (card.company?.toLowerCase().contains(query) ?? false) ||
+          (card.jobTitle?.toLowerCase().contains(query) ?? false);
+
+      if (!matchesQuery) return false;
+      if (_activeFilter == 'Company') {
+        return card.company != null && card.company!.isNotEmpty;
+      }
+      if (_activeFilter == 'Job Title') {
+        return card.jobTitle != null && card.jobTitle!.isNotEmpty;
+      }
+      return true;
+    }).toList();
+
+    if (_activeFilter == 'Recently Added') {
+      filteredCards.sort((a, b) {
+        if (a.createdAt == null) return 1;
+        if (b.createdAt == null) return -1;
+        return b.createdAt!.compareTo(a.createdAt!);
+      });
+    } else if (_activeFilter == 'Company') {
+      filteredCards.sort(
+        (a, b) => (a.company ?? '').compareTo(b.company ?? ''),
+      );
+    } else if (_activeFilter == 'Job Title') {
+      filteredCards.sort(
+        (a, b) => (a.jobTitle ?? '').compareTo(b.jobTitle ?? ''),
+      );
+    }
+
+    return filteredCards;
+  }
+
+  void _setCurrentTab(int index) {
+    if (_currentTabIndex == index) return;
+    setState(() => _currentTabIndex = index);
+  }
+
+  void _toggleSelectionMode() {
+    setState(() {
+      _isSelecting = !_isSelecting;
+      if (!_isSelecting) _selectedCardIds.clear();
+    });
+  }
+
+  void _handleCardTap(int cardId) {
+    setState(() {
+      final targetSet = _isSelecting ? _selectedCardIds : _expandedCardIds;
+      if (targetSet.contains(cardId)) {
+        targetSet.remove(cardId);
+      } else {
+        targetSet.add(cardId);
+      }
+    });
+  }
+
+  void _clearSelection() {
+    setState(() {
+      _selectedCardIds.clear();
+      _isSelecting = false;
+    });
+  }
+
+  Future<void> _deleteCard(VisitingCard card) async {
+    await ref.read(cardsRepositoryProvider).deleteCard(card.id);
+  }
+
+  Future<void> _deleteSelectedCards(List<VisitingCard> allCards) async {
+    final repository = ref.read(cardsRepositoryProvider);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+    var deleteCount = 0;
+    for (final id in _selectedCardIds) {
+      await repository.deleteCard(id);
+      deleteCount++;
+    }
+
+    _clearSelection();
+
+    scaffoldMessenger.showSnackBar(
+      SnackBar(
+        content: Text('$deleteCount cards deleted successfully!'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _shareSelectedCards(List<VisitingCard> allCards) {
+    final selectedCards = allCards
+        .where((card) => _selectedCardIds.contains(card.id))
+        .toList();
+    if (selectedCards.isEmpty) return;
+
+    if (selectedCards.length == 1) {
+      ExportHelper.shareAsVCard(selectedCards.first);
+    } else {
+      ExportHelper.shareAsCsv(selectedCards);
+    }
+  }
+
+  void _copyToClipboard(String text, String label) {
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -113,185 +380,105 @@ class _CardItem extends ConsumerWidget {
       ),
     );
   }
+}
+
+class _CardsToolbar extends StatelessWidget {
+  const _CardsToolbar({
+    required this.totalCards,
+    required this.isSelecting,
+    required this.searchController,
+    required this.filters,
+    required this.activeFilter,
+    required this.onToggleSelection,
+    required this.onSearchChanged,
+    required this.onFilterSelected,
+  });
+
+  final int totalCards;
+  final bool isSelecting;
+  final TextEditingController searchController;
+  final List<String> filters;
+  final String activeFilter;
+  final VoidCallback onToggleSelection;
+  final ValueChanged<String> onSearchChanged;
+  final ValueChanged<String> onFilterSelected;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final subtitleText = [
-      if (card.jobTitle != null && card.jobTitle!.isNotEmpty) card.jobTitle,
-      if (card.company != null && card.company!.isNotEmpty) card.company,
-    ].join(' @ ');
-
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: ExpansionTile(
-        shape: const Border(), // Remove default expansion tile borders
-        leading: CircleAvatar(
-          backgroundColor: Theme.of(context).primaryColor.withAlpha(26),
-          child: Text(
-            card.name.isNotEmpty ? card.name[0].toUpperCase() : '?',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).primaryColor,
-            ),
-          ),
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        CardsHeader(
+          totalCards: totalCards,
+          isSelecting: isSelecting,
+          onToggleSelection: onToggleSelection,
         ),
-        title: Text(
-          card.name,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.5,
-          ),
+        const SizedBox(height: 16),
+        AppSearchField(
+          controller: searchController,
+          hintText: 'Search names, companies, or titles...',
+          onChanged: onSearchChanged,
         ),
-        subtitle: subtitleText.isNotEmpty
-            ? Text(
-                subtitleText,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey.shade600,
-                ),
-              )
-            : null,
-        childrenPadding: const EdgeInsets.all(16),
-        children: [
-          // Structured Details List
-          if (card.email != null && card.email!.isNotEmpty)
-            _buildDetailRow(
-              context,
-              icon: Icons.email_outlined,
-              label: 'Email',
-              value: card.email!,
-              onCopy: () => _copyToClipboard(context, card.email!, 'Email'),
-            ),
-          if (card.phone != null && card.phone!.isNotEmpty)
-            _buildDetailRow(
-              context,
-              icon: Icons.phone_outlined,
-              label: 'Phone',
-              value: card.phone!,
-              onCopy: () => _copyToClipboard(context, card.phone!, 'Phone number'),
-            ),
-          if (card.website != null && card.website!.isNotEmpty)
-            _buildDetailRow(
-              context,
-              icon: Icons.web_outlined,
-              label: 'Website',
-              value: card.website!,
-              onCopy: () => _copyToClipboard(context, card.website!, 'Website link'),
-            ),
-
-          const SizedBox(height: 8),
-          const Divider(),
-          const SizedBox(height: 8),
-
-          // Raw OCR Text section
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Raw Extracted Text:',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    card.details,
-                    style: TextStyle(
-                      fontSize: 13,
-                      height: 1.5,
-                      color: Colors.grey.shade800,
-                      fontFamily: 'monospace',
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton.icon(
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.red,
-                ),
-                icon: const Icon(Icons.delete_outline, size: 20),
-                label: const Text('Delete'),
-                onPressed: () async {
-                  final scaffoldMessenger = ScaffoldMessenger.of(context);
-                  await ref.read(cardsRepositoryProvider).deleteCard(card.id);
-                  scaffoldMessenger.showSnackBar(
-                    const SnackBar(
-                      content: Text('Card deleted successfully!'),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                },
-              ),
-            ],
-          )
-        ],
-      ),
+        const SizedBox(height: 12),
+        CardFilterChips(
+          filters: filters,
+          activeFilter: activeFilter,
+          onSelected: onFilterSelected,
+        ),
+        const SizedBox(height: 16),
+      ],
     );
   }
+}
 
-  Widget _buildDetailRow(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required String value,
-    required VoidCallback onCopy,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: Colors.grey.shade600),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey.shade500,
-                  ),
-                ),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.copy, size: 18),
-            color: Theme.of(context).primaryColor,
-            tooltip: 'Copy $label',
-            onPressed: onCopy,
-          ),
-        ],
-      ),
+class _SettingsTab extends StatelessWidget {
+  const _SettingsTab({required this.cardsAsync, required this.onExportCards});
+
+  final AsyncValue<List<VisitingCard>> cardsAsync;
+  final void Function(List<VisitingCard> cards) onExportCards;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(24),
+      children: [
+        const Text(
+          'Settings',
+          style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 24),
+        ListTile(
+          leading: const Icon(Icons.palette_outlined),
+          title: const Text('Theme Mode'),
+          subtitle: const Text('Follow system theme'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () {},
+        ),
+        ListTile(
+          leading: const Icon(Icons.cloud_upload_outlined),
+          title: const Text('Export Database'),
+          subtitle: const Text('Download all scanned contacts as CSV'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () {
+            cardsAsync.whenData((cards) {
+              if (cards.isNotEmpty) {
+                onExportCards(cards);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('No contacts to export.')),
+                );
+              }
+            });
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.info_outline),
+          title: const Text('About CardScan'),
+          subtitle: const Text('Version 1.0.0'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => showAboutDialog(context: context),
+        ),
+      ],
     );
   }
 }

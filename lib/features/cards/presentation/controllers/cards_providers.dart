@@ -98,10 +98,10 @@ class CardScannerController extends StateNotifier<CardScannerState> {
 
   CardScannerController(this._repository) : super(const CardScannerState());
 
-  Future<void> scanCard() async {
+  Future<void> scanCard({ImageSource source = ImageSource.camera}) async {
     state = state.copyWith(isLoading: true, errorMessage: () => null);
     try {
-      final pickedFile = await _picker.pickImage(source: ImageSource.camera);
+      final pickedFile = await _picker.pickImage(source: source);
       if (pickedFile != null) {
         state = state.copyWith(image: () => pickedFile);
         await _extractText(pickedFile.path);
